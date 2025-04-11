@@ -38,5 +38,8 @@ INSERT INTO ExpenseCategories (category_id, category_name) VALUES
 (3, 'Shopping'),
 (4, 'Medical'),
 (5, 'Rent');
+ SET SQL_SAFE_UPDATES = 0;
 
+DELETE FROM users;
+DELETE FROM expenses;
 drop database financedb;
