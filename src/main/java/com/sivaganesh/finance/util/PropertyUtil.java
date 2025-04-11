@@ -4,20 +4,18 @@ import java.io.InputStream;
 import java.util.Properties;
 
 public class PropertyUtil {
-    private static final Properties props = new Properties();
 
-    static {
-        try (InputStream input = PropertyUtil.class.getClassLoader().getResourceAsStream("db.properties")) {
+    public static Properties loadProperties(String fileName) {
+        Properties props = new Properties();
+        try (InputStream input = PropertyUtil.class.getClassLoader().getResourceAsStream(fileName)) {
             if (input == null) {
-                throw new RuntimeException("Unable to find db.properties");
+                System.out.println("Unable to find " + fileName);
+                return null;
             }
             props.load(input);
         } catch (Exception e) {
-            e.printStackTrace();
+            System.out.println("Error loading properties file: " + e.getMessage());
         }
-    }
-
-    public static String getProperty(String key) {
-        return props.getProperty(key);
+        return props;
     }
 }

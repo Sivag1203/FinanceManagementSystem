@@ -2,11 +2,13 @@ package com.sivaganesh.finance;
 
 import com.sivaganesh.finance.dao.FinanceRepositoryImpl;
 import com.sivaganesh.finance.dao.IFinanceRepository;
-import com.sivaganesh.finance.entity.User;
 import com.sivaganesh.finance.entity.Expense;
-import com.sivaganesh.finance.entity.ExpenseCategory;
+import com.sivaganesh.finance.entity.User;
+import com.sivaganesh.finance.exception.ExpenseNotFoundException;
+import com.sivaganesh.finance.exception.UserNotFoundException;
 import org.junit.jupiter.api.*;
 
+import java.sql.Date;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -14,6 +16,9 @@ import java.util.List;
 public class FinanceRepositoryTest {
 
     private static IFinanceRepository repository;
+    private static final int testUserId = 5001;
+    private static final int testCategoryId = 1; // Make sure this exists in your DB
+    private static int testExpenseId;
 
     @BeforeAll
     public static void setup() {
@@ -22,106 +27,65 @@ public class FinanceRepositoryTest {
 
     @Test
     @Order(1)
-    public void testAddUser() {
-        User user = new User(100, "testuser", "testpass", "testuser@example.com");
-        repository.addUser(user);
-        System.out.println("✅ testAddUser passed");
+    public void testCreateUser() {
+        User user = new User(testUserId, "testuser", "testpass", "testuser5001@example.com");
+        boolean result = repository.createUser(user);
+        Assertions.assertTrue(result, "User creation failed");
+        System.out.println("✅ testCreateUser passed");
     }
 
     @Test
     @Order(2)
-    public void testGetUserById() {
-        User user = repository.getUserById(100);
-        Assertions.assertNotNull(user, "User should exist");
-        System.out.println("✅ testGetUserById passed");
+    public void testCreateExpense() {
+        Expense expense = new Expense(0, testUserId, 999.99, testCategoryId,
+                Date.valueOf(LocalDate.now()), "Test Expense");
+        boolean result = repository.createExpense(expense);
+        Assertions.assertTrue(result, "Expense creation failed");
+        System.out.println("✅ testCreateExpense passed");
     }
 
     @Test
     @Order(3)
-    public void testUpdateUser() {
-        User updatedUser = new User(100, "updatedUser", "updatedPass", "updated@example.com");
-        repository.updateUser(updatedUser);
-        User user = repository.getUserById(100);
-        Assertions.assertEquals("updatedUser", user.getUsername());
-        System.out.println("✅ testUpdateUser passed");
+    public void testGetAllExpenses() throws UserNotFoundException {
+        List<Expense> expenses = repository.getAllExpenses(testUserId);
+        Assertions.assertFalse(expenses.isEmpty(), "No expenses found for test user");
+        testExpenseId = expenses.get(0).getExpenseId(); // Save for update/delete tests
+        System.out.println("✅ testGetAllExpenses passed");
     }
 
     @Test
     @Order(4)
-    public void testAddExpenseCategory() {
-        ExpenseCategory category = new ExpenseCategory(100, "TestCategory");
-        repository.addExpenseCategory(category);
-        System.out.println("✅ testAddExpenseCategory passed");
-    }
-
-    @Test
-    @Order(5)
-    public void testGetCategoryById() {
-        ExpenseCategory category = repository.getCategoryById(100);
-        Assertions.assertNotNull(category, "Category should exist");
-        System.out.println("✅ testGetCategoryById passed");
-    }
-
-    @Test
-    @Order(6)
-    public void testUpdateExpenseCategory() {
-        ExpenseCategory updatedCategory = new ExpenseCategory(100, "UpdatedCategory");
-        repository.updateExpenseCategory(updatedCategory);
-        ExpenseCategory category = repository.getCategoryById(100);
-        Assertions.assertEquals("UpdatedCategory", category.getCategoryName());
-        System.out.println("✅ testUpdateExpenseCategory passed");
-    }
-
-    @Test
-    @Order(7)
-    public void testAddExpense() {
-        Expense expense = new Expense(200, 100, 999.99, 100, LocalDate.now(), "Test Expense Entry");
-        repository.addExpense(expense);
-        System.out.println("✅ testAddExpense passed");
-    }
-
-    @Test
-    @Order(8)
-    public void testGetExpensesByUserId() {
-        List<Expense> expenses = repository.getExpensesByUserId(100);
-        Assertions.assertFalse(expenses.isEmpty(), "Expenses should not be empty for user ID 100");
-        System.out.println("✅ testGetExpensesByUserId passed");
-    }
-
-    @Test
-    @Order(9)
-    public void testUpdateExpense() {
-        Expense updatedExpense = new Expense(200, 100, 1999.99, 100, LocalDate.now(), "Updated Expense Entry");
-        repository.updateExpense(updatedExpense);
-        List<Expense> expenses = repository.getExpensesByUserId(100);
-        Assertions.assertTrue(expenses.stream().anyMatch(e -> e.getAmount() == 1999.99));
+    public void testUpdateExpense() throws ExpenseNotFoundException {
+        Expense updatedExpense = new Expense(testExpenseId, testUserId, 1499.99, testCategoryId,
+                Date.valueOf(LocalDate.now()), "Updated Expense Description");
+        boolean result = repository.updateExpense(testUserId, updatedExpense);
+        Assertions.assertTrue(result, "Expense update failed");
         System.out.println("✅ testUpdateExpense passed");
     }
 
     @Test
-    @Order(10)
-    public void testDeleteExpense() {
-        repository.deleteExpense(200);
-        List<Expense> expenses = repository.getExpensesByUserId(100);
-        Assertions.assertTrue(expenses.stream().noneMatch(e -> e.getExpenseId() == 200));
+    @Order(5)
+    public void testGenerateReport() throws UserNotFoundException {
+        Date from = Date.valueOf(LocalDate.now().minusDays(1));
+        Date to = Date.valueOf(LocalDate.now().plusDays(1));
+        List<Expense> report = repository.getExpensesByDateRange(testUserId, from, to);
+        Assertions.assertFalse(report.isEmpty(), "No report data found");
+        System.out.println("✅ testGenerateReport passed");
+    }
+
+    @Test
+    @Order(6)
+    public void testDeleteExpense() throws ExpenseNotFoundException {
+        boolean result = repository.deleteExpense(testExpenseId);
+        Assertions.assertTrue(result, "Expense deletion failed");
         System.out.println("✅ testDeleteExpense passed");
     }
 
     @Test
-    @Order(11)
-    public void testDeleteExpenseCategory() {
-        repository.deleteExpenseCategory(100);
-        ExpenseCategory category = repository.getCategoryById(100);
-        Assertions.assertNull(category, "Category should be deleted");
-        System.out.println("✅ testDeleteExpenseCategory passed");
-    }
-
-    @Test
-    @Order(12)
-    public void testDeleteUser() {
-        repository.deleteUser(100);
-        User user = repository.getUserById(100);
-        Assertions.assertNull(user, "User should be deleted");
+    @Order(7)
+    public void testDeleteUser() throws UserNotFoundException {
+        boolean result = repository.deleteUser(testUserId);
+        Assertions.assertTrue(result, "User deletion failed");
         System.out.println("✅ testDeleteUser passed");
     }
 }

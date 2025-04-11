@@ -1,27 +1,19 @@
 package com.sivaganesh.finance.dao;
 
-import com.sivaganesh.finance.entity.User;
-import com.sivaganesh.finance.entity.Expense;
-import com.sivaganesh.finance.entity.ExpenseCategory;
-
+import java.sql.Date;
 import java.util.List;
 
+import com.sivaganesh.finance.entity.User;
+import com.sivaganesh.finance.entity.Expense;
+import com.sivaganesh.finance.exception.UserNotFoundException;
+import com.sivaganesh.finance.exception.ExpenseNotFoundException;
+
 public interface IFinanceRepository {
-    // User operations
-    void addUser(User user);
-    User getUserById(int userId);
-
-    // Expense operations
-    void addExpense(Expense expense);
-    List<Expense> getExpensesByUserId(int userId);
-    void updateExpense(Expense expense);
-    void deleteExpense(int expenseId);
-    void updateUser(User user);
-    void updateExpenseCategory(ExpenseCategory category);
-    void deleteExpenseCategory(int categoryId);
-    void deleteUser(int userId);
-
-    // Category operations
-    void addExpenseCategory(ExpenseCategory category);
-    ExpenseCategory getCategoryById(int categoryId);
+    boolean createUser(User user);
+    boolean createExpense(Expense expense);
+    boolean deleteUser(int userId) throws UserNotFoundException;
+    boolean deleteExpense(int expenseId) throws ExpenseNotFoundException;
+    List<Expense> getAllExpenses(int userId) throws UserNotFoundException;
+    boolean updateExpense(int userId, Expense expense) throws ExpenseNotFoundException;
+    List<Expense> getExpensesByDateRange(int userId, Date from, Date to) throws UserNotFoundException;
 }
